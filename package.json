@@ -1,0 +1,22 @@
+{
+  "author": "Kazakuri <kazakuri@urus.ai>",
+  "name": "anilist-toolbox",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "cross-env WASM_PACK_PROFILE=release NODE_ENV=production parcel build static/index.html --public-url ./",
+    "start": "cross-env WASM_PACK_PROFILE=dev parcel static/index.html -p 8000 --open",
+    "test": "wasm-pack test --headless --chrome"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.2",
+    "parcel-bundler": "^1.12.4",
+    "parcel-plugin-wasm.rs": "^1.2.16",
+    "sass": "^1.24.2",
+    "typescript": "^3.7.4"
+  },
+  "dependencies": {
+    "autoprefixer": "^9.8.6",
+    "postcss": "^7.0.35",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.0.1"
+  }
+}

@@ -1,0 +1,32 @@
+query AiringMedia ($user: Int, $page: Int) {
+  Page(page: $page) {
+    pageInfo {
+      hasNextPage
+    }
+    mediaList(userId: $user, type: ANIME, status: CURRENT) {
+      progress
+      customLists
+      hiddenFromStatusLists
+      media {
+        id
+        title {
+          english
+          romaji
+          native
+        }
+        episodes
+        coverImage {
+          extraLarge
+        }
+        externalLinks {
+          site
+          url
+        }
+        nextAiringEpisode {
+        	airingAt
+        	episode
+        }
+      }
+    }
+  }
+}

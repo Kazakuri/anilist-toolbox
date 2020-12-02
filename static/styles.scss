@@ -1,0 +1,90 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+body {
+  padding: 0;
+}
+
+
+@layer components {
+  h1 {
+    @apply px-4 py-2 text-2xl font-semibold;
+  }
+
+  .app-link {
+    @apply block mt-4 px-4 py-2 rounded mx-2 lg:inline-block lg:mt-0 hover:text-gray-900 hover:bg-gray-200 leading-7;
+  }
+
+  .login-link {
+    @apply block text-base px-4 py-2 rounded mx-2 mt-4 hover:text-gray-900 hover:bg-gray-200 lg:mt-0 leading-7;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 128px);
+    grid-gap: 1em;
+    padding: 0 1em;
+
+    > .img {
+      width: 128px;
+      height: 173px;
+      background-size: cover;
+      position: relative;
+      border-radius: 2px;
+
+      > .behind {
+        background: rgb(232, 93, 117);
+        border-radius: 0 0 2px 2px;
+        bottom: 0;
+        height: 5px;
+        left: 0;
+        position: absolute;
+        width: 100%;
+        z-index: 5;
+      }
+
+      > .overlay {
+        @apply text-sm text-white text-center;
+
+        background: rgba(0, 0, 0, 0.75);
+        border-radius: 0 0 2px 2px;
+        bottom: 0;
+        left: 0;
+        position: absolute;
+        width: 100%;
+        padding: 7px;
+
+        &.top {
+          top: 0;
+          bottom: unset;
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+
+          > div {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            &:hover > a {
+              cursor: pointer;
+              color: rgb(123, 213, 85);
+            }
+
+            &:hover > svg {
+              cursor: pointer;
+              color: rgb(123, 213, 85);
+            }
+
+            &.behind_count {
+              color: rgb(232, 93, 117);
+              font-weight: bold;
+              font-size: 1.25rem;
+              align-items: start;
+            }
+          }
+        }
+      }
+    }
+  }
+}

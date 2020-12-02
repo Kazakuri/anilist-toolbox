@@ -1,0 +1,43 @@
+[package]
+name = "anilist-toolbox"
+authors = ["Kazakuri <kazakuri@urus.ai>"]
+categories = ["wasm"]
+description = "Collection of tools I use daily on AniList."
+edition = "2018"
+license = "MIT"
+readme = "./README.md"
+repository = "https://github.com/kazakuri/anilist-toolbox.git"
+version = "0.1.0"
+
+[profile.release]
+lto = true
+opt-level = 's'
+
+[package.metadata.wasm-pack.profile.profiling]
+wasm-opt = ['-O4', '-g']
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+log = "0.4"
+yew = "0.17.3"
+yew-router = { version="0.14.0", features = ["web_sys"] }
+wasm-bindgen = "0.2.64"
+wasm-logger = "0.2.0"
+wee_alloc = "0.4.5"
+serde = "1.0.117"
+serde_qs = "0.7.0"
+graphql_client = "0.9.0"
+reqwest = { version = "0.10.9", features = ["json"] }
+jsonwebtoken = "7.2.0"
+yewtil = "0.3.2"
+chrono = { version = "0.4.19", default-features = false }
+instant = "0.1.9"
+js-sys = "0.3.46"
+humantime = "2.0.1"
+web-sys = "0.3.46"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.14"
+web-sys = { version = "0.3", features = ["Document", "Element", "HtmlCollection"] }
