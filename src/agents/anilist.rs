@@ -1,10 +1,12 @@
-use graphql_client::GraphQLQuery;
 use serde::{Deserialize, Serialize};
 use std::iter::Iterator;
 use yew::agent::AgentLink;
 use yew::services::storage::{Area, StorageService};
-use yewtil::future::LinkFuture;
 use yewtil::store::{Store, StoreWrapper};
+use yew::services::Task;
+use yew::services::fetch::{Request as HttpRequest, Response as HttpResponse, FetchService};
+use yew::format::Json;
+use graphql_client::Response;
 
 use jsonwebtoken::{
   // Note: This is a really stupid name, it just means we don't validate the signature.
@@ -37,6 +39,8 @@ pub struct AniList {
   has_requested_viewer: bool,
   has_requested_airing_media: bool,
 
+  tasks: Vec<yew::services::fetch::FetchTask>,
+
   access_token: Option<String>,
   claims: Option<TokenData<Claims>>,
 }
@@ -51,12 +55,42 @@ pub enum Request {
 #[derive(Debug)]
 pub enum Action {
   NoAction,
-  ApiError(reqwest::Error),
+  FetchTask(yew::services::fetch::FetchTask),
+  ApiError(anyhow::Error),
   RequestingViewer,
   SetViewer(Option<viewer::ViewerViewer>),
   RequestingAiringMedia,
   SetAiringMedia(Option<Vec<Option<airing_media::AiringMediaPageMediaList>>>),
   UpdateMediaProgress(i64, i64),
+}
+
+impl AniList {
+  fn fetch<Q: graphql_client::GraphQLQuery>(&self, link: AgentLink<StoreWrapper<Self>>, variables: Q::Variables, cb: Box<dyn Fn(String) -> self::Action>) {
+    if let Some(access_token) = &self.access_token {
+      let request_body = Q::build_query(variables);
+
+      let req = HttpRequest::post("https://graphql.anilist.co")
+        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Content-Type", "application/json")
+        .body(Json(&request_body))
+        .unwrap();
+
+        let callback = link.callback(move |response: HttpResponse<Result<String, anyhow::Error>>| {
+        let res = response.into_body();
+
+        match res {
+          Ok(body) => cb(body),
+          Err(e) => self::Action::ApiError(e)
+        }
+      });
+
+      link.send_message(
+        self::Action::FetchTask(
+          FetchService::fetch(req, callback).unwrap()
+        )
+      );
+    }
+  }
 }
 
 impl Store for AniList {
@@ -80,11 +114,7 @@ impl Store for AniList {
           (None, None)
         }
       },
-      Err(e) => {
-        // This probably just means the access_token wasn't found.
-        // We don't care.
-        (None, None)
-      }
+      Err(_) => (None, None)
     };
 
     AniList {
@@ -92,6 +122,7 @@ impl Store for AniList {
       airing_media: None,
       has_requested_viewer: false,
       has_requested_airing_media: false,
+      tasks: vec![],
       access_token,
       claims,
     }
@@ -111,26 +142,17 @@ impl Store for AniList {
       Self::Input::FetchViewer => {
         if !self.has_requested_viewer {
           link.send_message(Self::Action::RequestingViewer);
-          link.send_future(async move {
-            let client = reqwest::Client::new();
 
-            let request_body = viewer::Viewer::build_query(viewer::Variables {});
+          let variables = viewer::Variables {};
 
-            let req = client
-              .post("https://graphql.anilist.co")
-              .header("Authorization", format!("Bearer {}", access_token))
-              .json(&request_body)
-              .send()
-              .await;
-
-            match req {
-              Ok(res) => match res.json::<graphql_client::Response<viewer::ResponseData>>().await {
-                Ok(response) => Self::Action::SetViewer(response.data.unwrap().viewer),
-                Err(e) => Self::Action::ApiError(e),
-              },
-              Err(e) => Self::Action::ApiError(e),
+          let cb = |response: String| {
+            match serde_json::from_str::<Response<viewer::ResponseData>>(&response) {
+              Ok(response) => Self::Action::SetViewer(response.data.unwrap().viewer),
+              Err(e) => self::Action::ApiError(e.into())
             }
-          });
+          };
+
+          self.fetch::<viewer::Viewer>(link, variables, Box::new(cb));
         } else {
           link.send_message(Self::Action::NoAction);
         }
@@ -141,64 +163,50 @@ impl Store for AniList {
 
           let user = self.claims.as_ref().unwrap().claims.sub.parse::<i64>().unwrap();
 
-          link.send_future(async move {
-            let client = reqwest::Client::new();
+          let variables = airing_media::Variables {
+            page: Some(1),
+            user: Some(user),
+          };
 
-            let request_body = airing_media::AiringMedia::build_query(airing_media::Variables {
-              page: Some(1),
-              user: Some(user),
-            });
-
-            let req = client
-              .post("https://graphql.anilist.co")
-              .header("Authorization", format!("Bearer {}", access_token))
-              .json(&request_body)
-              .send()
-              .await;
-
-            match req {
-              Ok(res) => match res.json::<graphql_client::Response<airing_media::ResponseData>>().await {
-                Ok(response) => Self::Action::SetAiringMedia(response.data.unwrap().page.unwrap().media_list),
-                Err(e) => Self::Action::ApiError(e),
-              },
-              Err(e) => Self::Action::ApiError(e),
+          let cb = |response: String| {
+            match serde_json::from_str::<graphql_client::Response<airing_media::ResponseData>>(&response) {
+              Ok(response) => Self::Action::SetAiringMedia(response.data.unwrap().page.unwrap().media_list),
+              Err(e) => Self::Action::ApiError(e.into())
             }
-          });
+          };
+          
+          self.fetch::<airing_media::AiringMedia>(link, variables, Box::new(cb));
         } else {
           link.send_message(Self::Action::NoAction);
         }
-      }
+      },
       Self::Input::UpdateMediaProgress(id, progress) => {
-        link.send_future(async move {
-          let client = reqwest::Client::new();
-
-          let request_body = update_media::UpdateMedia::build_query(update_media::Variables {
-            media_id: id,
-            progress: Some(progress),
-          });
-
-          let req = client
-            .post("https://graphql.anilist.co")
-            .header("Authorization", format!("Bearer {}", access_token))
-            .json(&request_body)
-            .send()
-            .await;
-
-          match req {
-            Ok(res) => match res.json::<graphql_client::Response<update_media::ResponseData>>().await {
-              Ok(_) => Self::Action::UpdateMediaProgress(id, progress),
-              Err(e) => Self::Action::ApiError(e),
-            },
-            Err(e) => Self::Action::ApiError(e),
+        let variables = update_media::Variables {
+          media_id: id,
+          progress: Some(progress),
+        };
+        
+        let cb = move |response: String| {
+          match serde_json::from_str::<graphql_client::Response<update_media::ResponseData>>(&response) {
+            Ok(_) => Self::Action::UpdateMediaProgress(id, progress),
+            Err(e) => Self::Action::ApiError(e.into())
           }
-        });
+        };
+
+        self.fetch::<update_media::UpdateMedia>(link, variables, Box::new(cb));
       }
     }
   }
 
   fn reduce(&mut self, msg: Self::Action) {
+    // We're guaranteed to run this callback everytime a task completes.
+    // Every yew task has a callback that will trigger an action.
+    // Therefore we can prevent completed tasks from piling up by retaining only active ones here.
+    self.tasks.retain(|x| x.is_active());
+
     match msg {
       Self::Action::NoAction => (),
+      Self::Action::FetchTask(v) => { self.tasks.push(v); },
       Self::Action::ApiError(e) => log::error!("{}", e),
       Self::Action::RequestingViewer => self.has_requested_viewer = true,
       Self::Action::SetViewer(v) => self.viewer = v,
