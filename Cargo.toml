@@ -34,11 +34,9 @@ yewtil = "0.3.2"
 chrono = { version = "0.4.19", default-features = false }
 instant = "0.1.9"
 js-sys = "0.3.46"
-humantime = "2.0.1"
 web-sys = "0.3.46"
 anyhow = "1.0.34"
 serde_json = "1.0.59"
-rand = "0.7.3"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.14"

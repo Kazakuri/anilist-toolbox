@@ -105,12 +105,9 @@ impl Component for Nav {
                   </RouterAnchor<AppRoute>>
                     <a href={ format!("https://anilist.co/user/{}", &viewer.name) }>
                       {
-                        match &viewer.avatar {
-                          Some(avatar) => match &avatar.large {
-                            Some(img) => html! {
-                              <img class="h-12 inline-block" src={ img } />
-                            },
-                            _ => html! {}
+                        match &viewer.avatar.as_ref().map(|avatar| avatar.large.as_ref()).flatten() {
+                          Some(img) => html! {
+                            <img class="h-12 inline-block" src={ img } />
                           },
                           _ => html! {}
                         }

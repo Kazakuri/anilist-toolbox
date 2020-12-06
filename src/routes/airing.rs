@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 use yew::prelude::*;
 use yewtil::store::{Bridgeable, ReadOnly, StoreWrapper};
+use yew::services::interval::{IntervalService, IntervalTask};
+use std::time::Duration;
 
 use crate::agents::anilist;
 use crate::agents::anilist::AniList;
@@ -8,11 +10,13 @@ use crate::components::media::Media;
 
 pub struct Airing {
   media_list: Option<BTreeMap<String, Vec<anilist::AiringMediaList>>>,
-  _anilist: Box<dyn Bridge<StoreWrapper<AniList>>>,
+  anilist: Box<dyn Bridge<StoreWrapper<AniList>>>,
+  _interval: IntervalTask,
 }
 
 pub enum Msg {
   AniListMsg(ReadOnly<AniList>),
+  UpdateTime,
 }
 
 impl Component for Airing {
@@ -25,9 +29,16 @@ impl Component for Airing {
 
     anilist.send(anilist::Request::FetchAiringMedia);
 
+    // It would be more accurate to do this every second, but it wastes more CPU cycles and I don't care
+    let interval = IntervalService::spawn(
+      Duration::from_secs(60), 
+      link.callback(|_| Msg::UpdateTime)
+    );
+
     Self {
       media_list: None,
-      _anilist: anilist,
+      anilist: anilist,
+      _interval: interval,
     }
   }
 
@@ -37,6 +48,17 @@ impl Component for Airing {
 
   fn update(&mut self, msg: Self::Message) -> ShouldRender {
     match msg {
+      Self::Message::UpdateTime => { 
+        let dash = Some("-".to_owned());
+        let has_aired = |m: &BTreeMap<String, Vec<anilist::AiringMediaList>>| {
+          m.values().any(|m| m.iter().any(|m| m.airing_in() == dash))
+        };
+
+        if self.media_list.iter().any(has_aired) {
+          self.anilist.send(anilist::Request::FetchAiringMedia);
+        }
+        true
+      },
       Self::Message::AniListMsg(state) => {
         let state = state.borrow();
 

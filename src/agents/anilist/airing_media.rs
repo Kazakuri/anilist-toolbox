@@ -1,5 +1,7 @@
 use graphql_client::GraphQLQuery;
 
+use crate::utils::duration::Duration;
+
 type Json = std::collections::HashMap<String, bool>;
 
 #[derive(GraphQLQuery)]
@@ -38,11 +40,17 @@ impl self::airing_media::AiringMediaPageMediaList {
   }
 
   pub fn airing_in(&self) -> Option<String> {
-    let airing_at = self.media.as_ref()?.next_airing_episode.as_ref()?.airing_at;
-    let airing_in = airing_at as u64 - (js_sys::Date::now() / 1000.0) as u64;
+    let current_time = (js_sys::Date::now() / 1000.0) as u64;
+    let airing_at = self.media.as_ref()?.next_airing_episode.as_ref()?.airing_at as u64;
+
+    if airing_at < current_time {
+      return Some("-".to_owned());
+    }
+
+    let airing_in = airing_at - current_time;
     let airing_in = airing_in / (60) * (60);
 
-    let airing_in: humantime::Duration = std::time::Duration::from_secs(airing_in).into();
+    let airing_in: Duration = std::time::Duration::from_secs(airing_in).into();
 
     Some(format!("{}", airing_in))
   }
