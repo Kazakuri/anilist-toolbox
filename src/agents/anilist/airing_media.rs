@@ -48,7 +48,6 @@ impl self::airing_media::AiringMediaPageMediaList {
     }
 
     let airing_in = airing_at - current_time;
-    let airing_in = airing_in / (60) * (60);
 
     let airing_in: Duration = std::time::Duration::from_secs(airing_in).into();
 
