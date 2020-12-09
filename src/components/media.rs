@@ -55,7 +55,7 @@ impl Component for Media {
     html! {
       <div class="img" style={ format!("background-image: url({})", self.props.media.cover().unwrap()) }>
         {
-          if self.props.media.progress.unwrap() < self.props.media.next_episode().unwrap() - 1 {
+          if self.props.media.next_episode().is_some() && self.props.media.progress.unwrap() < self.props.media.next_episode().unwrap() - 1 {
             html! {
               <div class="behind"></div>
             }
@@ -64,34 +64,39 @@ impl Component for Media {
           }
         }
         <div class="overlay top">
-          <div class="behind_count">
+          <div class="text">
             {
-              match self.props.media.next_episode() {
-                Some(next) => if next - self.props.media.progress.unwrap() > 1 {
-                  html! {
-                    <>
-                      { format!("{}", next - 1 - self.props.media.progress.unwrap()) }
-                      <br />
-                    </>
-                  }
-                } else {
-                  html! {}
-                },
-                None => match self.props.media.total_episodes() {
-                  Some(total) => if total - self.props.media.progress.unwrap() > 0 {
+              self.props.media.progress.unwrap()
+            }
+            <span class="behind_count">
+              {
+                match self.props.media.next_episode() {
+                  Some(next) => if next - self.props.media.progress.unwrap() > 1 {
                     html! {
                       <>
-                        { format!("{}", total - self.props.media.progress.unwrap()) }
+                        { format!("({})", next - 1 - self.props.media.progress.unwrap()) }
                         <br />
                       </>
                     }
                   } else {
                     html! {}
                   },
-                  None => html! {}
+                  None => match self.props.media.total_episodes() {
+                    Some(total) => if total - self.props.media.progress.unwrap() > 0 {
+                      html! {
+                        <>
+                          { format!("({})", total - self.props.media.progress.unwrap()) }
+                          <br />
+                        </>
+                      }
+                    } else {
+                      html! {}
+                    },
+                    None => html! {}
+                  }
                 }
               }
-            }
+            </span>
           </div>
           <div>
             {

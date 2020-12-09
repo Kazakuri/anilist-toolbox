@@ -58,13 +58,21 @@ body {
         &.top {
           top: 0;
           bottom: unset;
-          display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
 
           > div {
             display: flex;
             justify-content: center;
             align-items: center;
+            flex: 1 1 0;
+            font-weight: bold;
+            font-size: 1.05rem;
+
+            &.text {
+              align-items: start;
+            }
 
             &:hover > a {
               cursor: pointer;
@@ -76,11 +84,9 @@ body {
               color: rgb(123, 213, 85);
             }
 
-            &.behind_count {
+            .behind_count {
+              padding-left: 5px;
               color: rgb(232, 93, 117);
-              font-weight: bold;
-              font-size: 1.25rem;
-              align-items: start;
             }
           }
         }

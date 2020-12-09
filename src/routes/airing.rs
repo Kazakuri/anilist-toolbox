@@ -89,8 +89,8 @@ impl Component for Airing {
             for (_, list) in map.iter_mut() {
               list.sort_by(|l, r| {
                 l.next_episode_time()
-                  .unwrap()
-                  .partial_cmp(&r.next_episode_time().unwrap())
+                  .unwrap_or(9999999999)
+                  .partial_cmp(&r.next_episode_time().unwrap_or(9999999999))
                   .unwrap()
               });
             }
