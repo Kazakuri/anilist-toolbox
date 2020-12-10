@@ -69,6 +69,7 @@ impl Component for Media {
             html! {}
           }
         }
+        <a href={ format!("https://anilist.co/anime/{}", self.props.media.id()) } target="_blank" />
         <div class="overlay top">
           <div class="text">
             {
