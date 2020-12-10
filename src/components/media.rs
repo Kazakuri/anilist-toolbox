@@ -19,6 +19,8 @@ pub enum Msg {
 #[derive(Properties, Clone)]
 pub struct Props {
   pub media: anilist::AiringMediaList,
+  #[prop_or_default]
+  pub disabled: bool,
 }
 
 impl Component for Media {
@@ -38,6 +40,10 @@ impl Component for Media {
   }
 
   fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    if self.props.disabled {
+      return true;
+    }
+
     match msg {
       Self::Message::AniListMsg(_) => true,
       Self::Message::AddProgress => {

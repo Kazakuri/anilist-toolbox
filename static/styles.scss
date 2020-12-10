@@ -6,10 +6,13 @@ body {
   padding: 0;
 }
 
-
 @layer components {
   h1 {
-    @apply px-4 py-2 text-2xl font-semibold;
+    @apply py-2 text-4xl font-semibold;
+  }
+  
+  h2 {
+    @apply py-2 text-2xl font-semibold;
   }
 
   .app-link {
@@ -20,15 +23,64 @@ body {
     @apply block text-base px-4 py-2 rounded mx-2 mt-4 hover:text-gray-900 hover:bg-gray-200 lg:mt-0 leading-7;
   }
 
+  $base-width: 128px;
+  $base-height: 173px;
+
+  .grid.example {
+    position: relative;
+    top: -200px;
+    right: calc(50% - 400px);
+    align-self: flex-end;
+    display: flex;
+    justify-content: center;
+    width: calc(50% - 400px);
+    transform: scale(2);
+    transform-origin: top left;
+    margin-top: $base-height / 2;
+  }
+
+  .introduction {
+    @apply px-4;
+
+    display: flex;
+    flex-direction: column;
+
+    ul {
+      @apply px-8;
+      list-style-type: disc;
+    }
+
+    li {
+      @apply px-2;
+    }
+  }
+
+  .arrow_overlay {
+    @apply text-lg;
+    
+    pointer-events: none;
+
+    position: relative;
+    height: $base-height * 3;
+    top: -$base-height * 1.5 - 200;
+    right: calc(50% - 400px);
+    align-self: flex-end;
+    white-space: nowrap;
+
+    path {
+      @apply fill-current;
+    }
+  }
+
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 128px);
+    grid-template-columns: repeat(auto-fill, $base-width);
     grid-gap: 1em;
     padding: 0 1em;
 
     > .img {
-      width: 128px;
-      height: 173px;
+      width: $base-width;
+      height: $base-height;
       background-size: cover;
       position: relative;
       border-radius: 2px;
